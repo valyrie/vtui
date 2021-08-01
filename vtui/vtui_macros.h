@@ -192,6 +192,12 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #endif
 
+#ifndef vtui_within
+
+#define vtui_within(n, l, h) (n >= l && n <= h)
+
+#endif
+
 // ## VTUI ERROR CODES ##
 
 #define VTUI_OK           0 // success!
