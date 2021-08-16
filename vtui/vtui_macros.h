@@ -38,7 +38,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef vtui_macros_h
 #define vtui_macros_h
 
-// ## INT32_T & UINT32_T TYPES ##
+// ## INT32 & UINT32 TYPES ##
 
 // a fixed, 32 bit integer type is used in various parts of vtui. if the user
 // does not supply their own, vtui will first attempt to use <stdint.h> if
@@ -50,86 +50,86 @@ POSSIBILITY OF SUCH DAMAGE.
 // support C99, it is reccomended you provide your own int32_t and uint32_t
 // types, the typedefs for which will depend on your target platform.
 
-#ifndef VTUI_INT32_T
+#ifndef VTUI_INT32
 
 // first check for C99 support
 #if __STDC_VERSION__ >= 199901L
 
 #include <stdint.h>
 
-#define VTUI_INT32_T int32_t
+#define VTUI_INT32 int32_t
 
 #else
 // no C99 support, fallback to long int
 
 // guranteed to be at least 32 bits
-#define VTUI_INT32_T long int
+#define VTUI_INT32 long int
 
 #endif
 #endif
 
-#ifndef VTUI_UINT32_T
+#ifndef VTUI_UINT32
 
 // first check for C99 support
 #if __STDC_VERSION__ >= 199901L
 
 #include <stdint.h>
 
-#define VTUI_UINT32_T uint32_t
+#define VTUI_UINT32 uint32_t
 
 #else
 // no C99 support, fallback to long int
 
 // guranteed to be at least 32 bits
-#define VTUI_UINT32_T unsigned long int
+#define VTUI_UINT32 unsigned long int
 
 #endif
 #endif
 
-// ## VTUI SIZE_T TYPE ##
+// ## VTUI SIZE TYPE ##
 
-// much like vtui_int32_t and vtui_uint32_t, vtui needs a size_t; override this
+// much like vtui_int32 and vtui_uint32, vtui needs a size_t; override this
 // if you don't want <stddef.h> pulled into the environment
 
-#ifndef VTUI_SIZE_T
+#ifndef VTUI_SIZE
 
 #include <stddef.h>
 
-#define VTUI_SIZE_T size_t
+#define VTUI_SIZE size_t
 
 #endif
 
 // ## VTUI_BOOL TYPE ##
 
-// also a lot like u?int32_t and size_t, in one or two little places vtui needs
+// also a lot like u?int32 and size, in one or two little places vtui needs
 // a boolean type
 
-#ifndef VTUI_BOOL_T
+#ifndef VTUI_BOOL
 
 // first check for C99 support
 #if __STDC_VERSION__ >= 199901L
 
 #include <stdbool.h>
 
-#define VTUI_BOOL_T bool
-#define VTUI_TRUE_T true
-#define VTUI_FALSE_T false
+#define VTUI_BOOL bool
+#define VTUI_TRUE true
+#define VTUI_FALSE false
 
 #else
 // no C99 support, fallback to char
 
-#define VTUI_BOOL_T char
+#define VTUI_BOOL char
 #define VTUI_TRUE (1)
 #define VTUI_FALSE (0)
 
 #endif
 #endif
 
-// ## VTUI BYTE_T TYPE ##
+// ## VTUI BYTE TYPE ##
 
-#ifndef VTUI_BYTE_T
+#ifndef VTUI_BYTE
 
-#define VTUI_BYTE_T unsigned char
+#define VTUI_BYTE unsigned char
 
 #endif
 

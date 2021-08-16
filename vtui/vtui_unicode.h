@@ -71,7 +71,7 @@ POSSIBILITY OF SUCH DAMAGE.
 // decoded via out parameter, return the codepoint directly. If a valid
 // codepoint cannot be decoded, the returned character is undefined, and the
 // number of bytes decoded will be set to zero.
-VTUI_UINT32_T _vtui_decode_utf8(const char *bytes, size_t max_bytes, int *decoded) {
+VTUI_UINT32 _vtui_decode_utf8(const char *bytes, size_t max_bytes, int *decoded) {
     if (max_bytes >= 1) {
         // there are bytes
         char lead = bytes[0];
@@ -85,7 +85,7 @@ VTUI_UINT32_T _vtui_decode_utf8(const char *bytes, size_t max_bytes, int *decode
             if (vtui_within(tail1, 0x80, 0xBF)) {
                 // valid traling byte
                 *decoded = 2;
-                VTUI_INT32_T codepoint = lead & _vtui_utf8_h2_mask;
+                VTUI_INT32 codepoint = lead & _vtui_utf8_h2_mask;
                 codepoint <<= _vtui_utf8_t_bits;
                 codepoint |= tail1 & _vtui_utf8_t_mask; 
                 return codepoint;
@@ -102,7 +102,7 @@ VTUI_UINT32_T _vtui_decode_utf8(const char *bytes, size_t max_bytes, int *decode
             if (vtui_within(tail1, 0x80, 0xBF) \
                 && vtui_within(tail2, 0x80, 0xBF)) {
                 *decoded = 3;
-                VTUI_INT32_T codepoint = lead & _vtui_utf8_h3_mask;
+                VTUI_INT32 codepoint = lead & _vtui_utf8_h3_mask;
                 codepoint <<= _vtui_utf8_t_bits;
                 codepoint |= tail1 & _vtui_utf8_t_mask;
                 codepoint <<= _vtui_utf8_t_bits;
@@ -123,7 +123,7 @@ VTUI_UINT32_T _vtui_decode_utf8(const char *bytes, size_t max_bytes, int *decode
                 && vtui_within(tail2, 0x80, 0xBF) \
                 && vtui_within(tail3, 0x80, 0xBF)) {
                 *decoded = 3;
-                VTUI_INT32_T codepoint = lead & _vtui_utf8_h4_mask;
+                VTUI_INT32 codepoint = lead & _vtui_utf8_h4_mask;
                 codepoint <<= _vtui_utf8_t_bits;
                 codepoint |= tail1 & _vtui_utf8_t_mask;
                 codepoint <<= _vtui_utf8_t_bits;
@@ -150,8 +150,8 @@ VTUI_UINT32_T _vtui_decode_utf8(const char *bytes, size_t max_bytes, int *decode
 
 // ## VTUI UNICODE GRAPHEME SEGMENTATION ##
 
-//
-int _vtui_utf8_gclen(const char *bytes, size_t max_bytes) {
+// 
+int _vtui_utf8_gc_bytes(const char *bytes, size_t max_bytes) {
     //TODO
 }
 

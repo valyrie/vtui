@@ -58,20 +58,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "vtui_macros.h"
 #include "vtui_types.h"
 
-// ## VTUI AXIS TYPES ##
-
-#ifndef VTUI_AXIS_T
-
-#define VTUI_AXIS_T unsigned int
-
-#endif
-
-#ifndef VTUI_LI_AXIS_T
-
-#define VTUI_LI_AXIS_T long signed int
-
-#endif
-
 // ## VTUI CHARACTER CODES ##
 
 #ifndef VTUI_NUL
@@ -119,9 +105,9 @@ POSSIBILITY OF SUCH DAMAGE.
 
 // memory manipulation function typedefs
 
-typedef void *(vtui_malloc)(VTUI_SIZE_T);                            //malloc
-typedef void (vtui_free)(void *);                                    //free
-typedef void (vtui_memcpy)(void *, const void *, VTUI_SIZE_T);       //memcpy
+typedef void *(vtui_malloc)(VTUI_SIZE);                             //malloc
+typedef void (vtui_free)(void *);                                   //free
+typedef void (vtui_memcpy)(void *, const void *, VTUI_SIZE);        //memcpy
 
 // the library provided behavior of realloc differs between C89 and C99 vtui
 // expects a realloc that behaves according to C99 -- returning NULL always
@@ -129,7 +115,7 @@ typedef void (vtui_memcpy)(void *, const void *, VTUI_SIZE_T);       //memcpy
 // successful reallocation to a size of zero (free, basically); additionally,
 // to avoid any confusion as to the success of realloc with a C89 library,
 // this function will never be invoked with a size_t equal to zero.
-typedef void *(vtui_realloc)(void *, VTUI_SIZE_T);                   //realloc
+typedef void *(vtui_realloc)(void *, VTUI_SIZE);                    //realloc
 
 // i/o function typedefs
 
@@ -139,7 +125,7 @@ typedef void *(vtui_realloc)(void *, VTUI_SIZE_T);                   //realloc
 //  agressively,  due to the inconsistent state non-atomic writes will leave it
 //  in. expects that the number of bytes written will equal the number of bytes
 //  provided, otherwise vtui will treat it as an error (incomplete write)
-typedef int (vtui_write)(void *file, const char *buf, VTUI_SIZE_T bytes);
+typedef int (vtui_write)(void *file, const char *buf, VTUI_SIZE bytes);
 
 // string formatting function typedefs
 
@@ -175,24 +161,24 @@ size_t _vtui_strnt_bytes(const char *str) {
 
 // a vtui_cursor_state encodes the state of the cursor
 typedef struct vtui_cursor_state {
-        VTUI_AXIS_T row;   // rows start at 1 -- 0 means hyperspace
-        VTUI_AXIS_T col;   // cols start at 1 -- 0 means hyperspace
-        VTUI_BOOL_T invisible;
-} vtui_cursor_state_t;
+        VTUI_AXIS row;   // rows start at 1 -- 0 means hyperspace
+        VTUI_AXIS col;   // cols start at 1 -- 0 means hyperspace
+        VTUI_BOOL invisible;
+} vtui_cursor_state;
 
 // private update buffer state enum -- used to fuse commands where possible
 typedef enum _vtui_update_buffer_state {
     _vtui_update_buffer_state_last_cmd_was_not_sgr = 0,
     _vtui_update_buffer_state_last_cmd_was_sgr
-} _vtui_update_buffer_state_t;
+} _vtui_update_buffer_state;
 
 // private updated buffer structure -- stores chars while building an update
 typedef struct _vtui_update_buffer {
     char *text;
     size_t cur_bytes;
     size_t capacity;
-    _vtui_update_buffer_state_t state;
-} _vtui_update_buffer_t;
+    _vtui_update_buffer_state state;
+} _vtui_update_buffer;
 
 // primary vtui structure -- represents a single vtui on a single output
 typedef struct vtui {
@@ -212,18 +198,18 @@ typedef struct vtui {
     // TODO rendering variables
     // boxes, front boxes
 
-    vtui_cursor_state_t cursor;
-    VTUI_BOOL_T beep;
+    vtui_cursor_state cursor;
+    VTUI_BOOL beep;
 
     // "front" variables, used to track the state the output was left in
-    vtui_cursor_state_t front_cursor;
-    vtui_color_t front_fg;
-    vtui_color_t front_bg;
-    VTUI_BOOL_T front_colors_initalized;
+    vtui_cursor_state front_cursor;
+    vtui_color front_fg;
+    vtui_color front_bg;
+    VTUI_BOOL front_colors_initalized;
 
     // internal update buffer -- used to build updates as one long string
-    _vtui_update_buffer_t _buffer;
-} vtui_t;
+    _vtui_update_buffer _buffer;
+} vtui;
 
 // ## VTUI UPDATE BUFFER ROUTINES ##
 
@@ -232,7 +218,7 @@ typedef struct vtui {
 //  supports overwriting some of the bytes already in the buffer, but does not
 //  sanity check overwrite to prevent underflows, or that bytes is greater than
 //  overwrite (unsigned math goes out the window when you subtract from 0)
-int _vtui_pushBytes(vtui_t *vtui, const char *buf, size_t bytes, size_t over) {
+int _vtui_pushBytes(vtui *vtui, const char *buf, VTUI_SIZE bytes, VTUI_SIZE over) {
     if (vtui->_buffer.cur_bytes + bytes - over > vtui->_buffer.capacity) {
         size_t newcapacity = vtui->_buffer.capacity;
         while (vtui->_buffer.cur_bytes + bytes - over > newcapacity) {
@@ -259,9 +245,9 @@ int _vtui_pushBytes(vtui_t *vtui, const char *buf, size_t bytes, size_t over) {
 //  can fail with VTUI_EIO (generic I/O error); if an error occurs while
 //  writing, a partial write may have occurred, leaving the vtui in an
 //  inconsisent state!
-int _vtui_flush(vtui_t *vtui) {
+int _vtui_flush(vtui *vtui) {
     if (vtui->_buffer.cur_bytes > 0){
-        _vtui_update_buffer_t *buffer = &vtui->_buffer;
+        _vtui_update_buffer *buffer = &vtui->_buffer;
         int written = vtui->write(
             vtui->out_file, buffer->text, buffer->cur_bytes);
         if (written == buffer->cur_bytes) {
@@ -278,7 +264,7 @@ int _vtui_flush(vtui_t *vtui) {
 }
 
 // push a non-sgr command
-int _vtui_pushCmd(vtui_t *vtui, const char *cmd, int bytes) {
+int _vtui_pushCmd(vtui *vtui, const char *cmd, int bytes) {
     int err = _vtui_pushBytes(vtui, cmd, bytes, 0);
     if (err == VTUI_OK) {
         vtui->_buffer.state = _vtui_update_buffer_state_last_cmd_was_not_sgr;
@@ -289,7 +275,7 @@ int _vtui_pushCmd(vtui_t *vtui, const char *cmd, int bytes) {
 }
 
 // push a sgr command
-int _vtui_pushSgrCmd(vtui_t *vtui, const char *cmd, int bytes) {
+int _vtui_pushSgrCmd(vtui *vtui, const char *cmd, int bytes) {
     int overwrite;
     char *base;
     size_t len;
@@ -314,7 +300,7 @@ int _vtui_pushSgrCmd(vtui_t *vtui, const char *cmd, int bytes) {
 // ## VTUI VT COMMANDS ##
 
 // reset the terminal's Select Graphics Rendition state
-int _vtui_vt_resetSgr(vtui_t *vtui) {
+int _vtui_vt_resetSgr(vtui *vtui) {
     const char *cmd = VTUI_CSI "0m";
     // VTUI doesn't know how to handle non-truecolor colors
     vtui->front_colors_initalized = VTUI_FALSE;
@@ -323,21 +309,21 @@ int _vtui_vt_resetSgr(vtui_t *vtui) {
 }
 
 // unhide the cursor, making it visible
-int _vtui_vt_showCursor(vtui_t *vtui) {
+int _vtui_vt_showCursor(vtui *vtui) {
     const char *cmd = VTUI_CSI "?25h";
     vtui->front_cursor.invisible = VTUI_FALSE;
     return _vtui_pushCmd(vtui, cmd, _vtui_strnt_bytes(cmd));
 }
 
 // hide the cursor, making it invisible
-int _vtui_vt_hideCursor(vtui_t *vtui) {
+int _vtui_vt_hideCursor(vtui *vtui) {
     const char *cmd = VTUI_CSI "?25l";
     vtui->front_cursor.invisible = VTUI_TRUE;
     return _vtui_pushCmd(vtui, cmd, _vtui_strnt_bytes(cmd));
 }
 
 // make a beep on the terminal
-int _vtui_vt_beep(vtui_t *vtui) {
+int _vtui_vt_beep(vtui *vtui) {
     const char *cmd = VTUI_BEL;
     vtui->beep = VTUI_FALSE; //do not beep again
     return _vtui_pushCmd(vtui, cmd, _vtui_strnt_bytes(cmd));
@@ -346,7 +332,7 @@ int _vtui_vt_beep(vtui_t *vtui) {
 // clears the screen and sometimes resets cursor position to the top left,
 // colors need to be initalized before calling, otherwise will fail with
 // VTUI_EWRONGSTATE.
-int _vtui_vt_clearScreen(vtui_t *vtui) {
+int _vtui_vt_clearScreen(vtui *vtui) {
     const char *cmd = VTUI_CSI "2J";
     if (vtui->front_colors_initalized) {
         // no idea where this puts the cursor -- send it off to hyperspace
@@ -360,7 +346,7 @@ int _vtui_vt_clearScreen(vtui_t *vtui) {
 }
 
 // enter the alternate screen buffer
-int _vtui_vt_enterAlt(vtui_t *vtui) {
+int _vtui_vt_enterAlt(vtui *vtui) {
     const char *cmd = VTUI_CSI "1049h";
     // no idea where this puts the cursor -- send it off to hyperspace
     vtui->front_cursor.row = VTUI_HYPERSPACE;
@@ -371,7 +357,7 @@ int _vtui_vt_enterAlt(vtui_t *vtui) {
 }
 
 // exit the alternate screen buffer
-int _vtui_vt_exitAlt(vtui_t *vtui) {
+int _vtui_vt_exitAlt(vtui *vtui) {
     const char *cmd = VTUI_CSI "1049l";
     // no idea where this puts the cursor -- send it off to hyperspace
     vtui->front_cursor.row = VTUI_HYPERSPACE;
@@ -388,28 +374,28 @@ int _vtui_vt_exitAlt(vtui_t *vtui) {
 
 // move the cursor from its current position to the specified position, by any
 // means necessary and using the minimum amount of bytes
-int _vtui_vt_moveTo(vtui_t *vtui, int row, int col) {
+int _vtui_vt_moveTo(vtui *vtui, int row, int col) {
     // if the cursor is not already in position
     if (vtui->front_cursor.row != row && vtui->front_cursor.col != col) {
         // check for hyperspace
-        VTUI_BOOL_T srcrow_hyperspace = row == VTUI_HYPERSPACE;
-        VTUI_BOOL_T srccol_hyperspace = col == VTUI_HYPERSPACE;
-        VTUI_BOOL_T any_hyperspace = srcrow_hyperspace | srccol_hyperspace;
+        VTUI_BOOL srcrow_hyperspace = row == VTUI_HYPERSPACE;
+        VTUI_BOOL srccol_hyperspace = col == VTUI_HYPERSPACE;
+        VTUI_BOOL any_hyperspace = srcrow_hyperspace | srccol_hyperspace;
 
         // check if destination is a home
-        VTUI_BOOL_T dstrow_home = row == VTUI_HOME;
-        VTUI_BOOL_T dstcol_home = col == VTUI_HOME;
-        VTUI_BOOL_T screen_home = dstrow_home & dstcol_home; 
+        VTUI_BOOL dstrow_home = row == VTUI_HOME;
+        VTUI_BOOL dstcol_home = col == VTUI_HOME;
+        VTUI_BOOL screen_home = dstrow_home & dstcol_home; 
 
         // compute signed distance
-        VTUI_LI_AXIS_T row_dist = (VTUI_LI_AXIS_T) row \
-            - (VTUI_LI_AXIS_T) vtui->front_cursor.row;
-        VTUI_LI_AXIS_T col_dist = (VTUI_LI_AXIS_T) col \
-            - (VTUI_LI_AXIS_T) vtui->front_cursor.col;
+        VTUI_LI_AXIS row_dist = (VTUI_LI_AXIS) row \
+            - (VTUI_LI_AXIS) vtui->front_cursor.row;
+        VTUI_LI_AXIS col_dist = (VTUI_LI_AXIS) col \
+            - (VTUI_LI_AXIS) vtui->front_cursor.col;
 
         // compute signed distance from home
-        VTUI_LI_AXIS_T hrow_dist = (VTUI_LI_AXIS_T) row - VTUI_HOME;
-        VTUI_LI_AXIS_T hcol_dist = (VTUI_LI_AXIS_T) col - VTUI_HOME;
+        VTUI_LI_AXIS hrow_dist = (VTUI_LI_AXIS) row - VTUI_HOME;
+        VTUI_LI_AXIS hcol_dist = (VTUI_LI_AXIS) col - VTUI_HOME;
 
         // commands
         const char *relup_fmt = VTUI_CSI "%uA";
@@ -502,7 +488,7 @@ int _vtui_vt_moveTo(vtui_t *vtui, int row, int col) {
 }
 
 // set the foreground color to the specified 24-bit truecolor color
-int _vtui_vt_setFg(vtui_t *vtui, VTUI_BYTE_T r, VTUI_BYTE_T g, VTUI_BYTE_T b) {
+int _vtui_vt_setFg(vtui *vtui, VTUI_BYTE r, VTUI_BYTE g, VTUI_BYTE b) {
     const char *cmd_fmt = VTUI_CSI "38;2;%u;%u;%um";
     char cmd_buf[32]; // oversized, to be safe
     int bytes = vtui->snprintf(cmd_buf, 32, cmd_fmt, r, g, b);
@@ -516,7 +502,7 @@ int _vtui_vt_setFg(vtui_t *vtui, VTUI_BYTE_T r, VTUI_BYTE_T g, VTUI_BYTE_T b) {
 }
 
 // set the background color to the specified 24-bit truecolor color
-int _vtui_vt_setBg(vtui_t *vtui, VTUI_BYTE_T r, VTUI_BYTE_T g, VTUI_BYTE_T b) {
+int _vtui_vt_setBg(vtui *vtui, VTUI_BYTE r, VTUI_BYTE g, VTUI_BYTE b) {
     const char *cmd_fmt = VTUI_CSI "38;2;%u;%u;%um";
     char cmd_buf[32]; // oversized, to be safe
     int bytes = vtui->snprintf(cmd_buf, 32, cmd_fmt, r, g, b);
@@ -530,7 +516,7 @@ int _vtui_vt_setBg(vtui_t *vtui, VTUI_BYTE_T r, VTUI_BYTE_T g, VTUI_BYTE_T b) {
 }
 
 // push a single unicode codepoint to an update buffer
-int _vtui_vt_pushCodepoint(vtui_t *vtui, VTUI_UINT32_T character) {
+int _vtui_vt_pushCodepoint(vtui *vtui, VTUI_UINT32 character) {
     const char *cmd_fmt = "%lc";
     char cmd_buf[32]; // way way way oversized, to be safe
     int bytes = vtui->snprintf(cmd_buf, 32, cmd_fmt, character);
@@ -559,7 +545,7 @@ int _vtui_vt_pushCodepoint(vtui_t *vtui, VTUI_UINT32_T character) {
 // ## VTUI RENDERING ROUTINES ##
 
 //
-int vtui_update(vtui *vtui, VTUI_BOOL_T full_redraw) {
+int vtui_update(vtui *vtui, VTUI_BOOL full_redraw) {
 
 }
 

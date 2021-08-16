@@ -40,7 +40,21 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtui_macros.h"
 
-// ## VTUI MAJOR COMMON TYPEDEFS ##
+// ## VTUI AXIS TYPES ##
+
+#ifndef VTUI_AXIS
+
+#define VTUI_AXIS unsigned int
+
+#endif
+
+#ifndef VTUI_LI_AXIS
+
+#define VTUI_LI_AXIS long signed int
+
+#endif
+
+// ## VTUI COMMON TYPEDEFS ##
 
 // TODO support non-truecolor text coloration (4bit, 6x6x6, greyscale)
 
@@ -48,15 +62,15 @@ POSSIBILITY OF SUCH DAMAGE.
 typedef struct vtui_color {
     union {
         struct {
-            VTUI_BYTE_T red;
-            VTUI_BYTE_T green;
-            VTUI_BYTE_T blue;
-            VTUI_BYTE_T _unused;
+            VTUI_BYTE red;
+            VTUI_BYTE green;
+            VTUI_BYTE blue;
+            VTUI_BYTE _unused;
         };
-        VTUI_BYTE_T bytes[4];
-        VTUI_UINT32_T color;
+        VTUI_BYTE bytes[4];
+        VTUI_UINT32 color;
     };
-} vtui_color_t;
+} vtui_color;
 
 // TODO formatting
 
@@ -64,8 +78,8 @@ typedef struct vtui_color {
 // a single cell of the attached terminal.
 typedef struct vtui_cell {
     char *grapheme;
-    vtui_color_t fg;
-    vtui_color_t bg;
-} vtui_cell_t;
+    vtui_color fg;
+    vtui_color bg;
+} vtui_cell;
 
 #endif
