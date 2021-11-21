@@ -1,5 +1,9 @@
 # Get the Unicode Character Database and generate necessary functions from it
 
+"""
+Autogenerate needed unicode codepoint classification functions from the UCD
+"""
+
 license = """
 The Clear BSD License
 
@@ -35,23 +39,40 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-import requests
+import urllib.request, urllib.error
 import argparse
 
-# canonical URL for the ucd
-ucd_url = "https://www.unicode.org/Public/UCD/latest/ucd"
+# UCD version to be used (old versions might or might not work, dunno)
+ucd_ver = "latest" # at time of development latest is ver 13
 
-# the UCD is parsed according to UAX technical report 44, and accompanying
+# canonical URL for the ucd
+ucd_url = "https://www.unicode.org/Public/UCD/" + ucd_ver + "/ucd"
+
+# the UCD is parsed according to UAX technical report 44 and accompanying
 # materials, fetched from https://unicode.org/reports/tr44/
 
 # TODO
 
-# what properties am I interested in?
-#  General_Category
-#  Prepend_Concatenation_Mark
-#  Grapheme_Extend
-#  Emoji_Modifier
-#  Regoinal_Indicator
-#  Indic_Syllabic_Category
-#  Grapheme_Cluster_Break
-#  Hangul_Syllable_Type
+# what properties am I interested in? (and from what files)
+#  General_Category (UnicodeData.txt)
+#  Prepend_Concatenation_Mark (PropList.txt)
+#  Grapheme_Extend (DerivedCoreProperties.txt)
+#  Emoji_Modifier (emoji-data.txt)
+#  Regoinal_Indicator (PropList.txt)
+#  Indic_Syllabic_Category (IndicSyllabicCategory.txt)
+#  Grapheme_Cluster_Break (GraphemeBreakProperty.txt)
+#  Hangul_Syllable_Type (HangulSyllableType.txt)
+
+# TODO properties to tell if a character is a CJK character or not? This probably isn't helpful, as it will be font/terminal specific
+#  East_Asian_Width
+#  Ideographic
+
+# get the resource behind a url
+
+def fetchUrl(url):
+     with urllib.request.urlopen(url) as response:
+          return response.read()
+
+# iterator to parse the generic UCD format
+
+# TODO
